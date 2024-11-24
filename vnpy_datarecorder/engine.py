@@ -232,6 +232,7 @@ class RecorderEngine(BaseEngine):
         for ticks in self.ticks.values():
             self.queue.put(("tick", ticks))
         self.ticks.clear()
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} DataRecorder: Save data to database")
 
     def process_tick_event(self, event: Event) -> None:
         """"""
