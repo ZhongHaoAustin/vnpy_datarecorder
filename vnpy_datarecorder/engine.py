@@ -9,12 +9,7 @@ from datetime import datetime, timedelta
 from vnpy.event import Event, EventEngine
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.constant import Exchange
-from vnpy.trader.object import (
-    SubscribeRequest,
-    TickData,
-    BarData,
-    ContractData
-)
+from vnpy.trader.object import SubscribeRequest, TickData, BarData, ContractData
 from vnpy.trader.event import EVENT_TICK, EVENT_CONTRACT, EVENT_TIMER
 from vnpy.trader.utility import load_json, save_json, BarGenerator
 from vnpy.trader.database import BaseDatabase, get_database, DB_TZ
@@ -53,9 +48,9 @@ class RecorderEngine(BaseEngine):
         self.ticks: dict[str, list[TickData]] = defaultdict(list)
         self.bars: dict[str, list[BarData]] = defaultdict(list)
 
-        self.filter_dt: datetime = datetime.now(DB_TZ)      # Tick数据过滤的时间戳
-        self.filter_window: int = 60                        # Tick数据过滤的时间窗口，默认60秒
-        self.filter_delta: timedelta = None                 # Tick数据过滤的时间偏差对象
+        self.filter_dt: datetime = datetime.now(DB_TZ)  # Tick数据过滤的时间戳
+        self.filter_window: int = 60  # Tick数据过滤的时间窗口，默认60秒
+        self.filter_delta: timedelta = None  # Tick数据过滤的时间偏差对象
 
         self.database: BaseDatabase = get_database()
 
@@ -75,10 +70,7 @@ class RecorderEngine(BaseEngine):
 
     def save_setting(self) -> None:
         """"""
-        setting: dict = {
-            "tick": self.tick_recordings,
-            "bar": self.bar_recordings
-        }
+        setting: dict = {"tick": self.tick_recordings, "bar": self.bar_recordings}
         save_json(self.setting_filename, setting)
 
     def run(self) -> None:
@@ -90,6 +82,9 @@ class RecorderEngine(BaseEngine):
 
                 if task_type == "tick":
                     self.database.save_tick_data(data, stream=True)
+                    print(
+                        f"datetime: {datetime.now().strftime('%Y%m%d %H:%M:%S')}, save tick size {len(data)}"
+                    )
                 elif task_type == "bar":
                     self.database.save_bar_data(data, stream=True)
 
@@ -130,7 +125,7 @@ class RecorderEngine(BaseEngine):
             self.bar_recordings[vt_symbol] = {
                 "symbol": contract.symbol,
                 "exchange": contract.exchange.value,
-                "gateway_name": contract.gateway_name
+                "gateway_name": contract.gateway_name,
             }
 
             self.subscribe(contract)
@@ -158,7 +153,7 @@ class RecorderEngine(BaseEngine):
             self.tick_recordings[vt_symbol] = {
                 "symbol": contract.symbol,
                 "exchange": contract.exchange.value,
-                "gateway_name": contract.gateway_name
+                "gateway_name": contract.gateway_name,
             }
 
             self.subscribe(contract)
@@ -232,7 +227,6 @@ class RecorderEngine(BaseEngine):
         for ticks in self.ticks.values():
             self.queue.put(("tick", ticks))
         self.ticks.clear()
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} DataRecorder: Save data to database")
 
     def process_tick_event(self, event: Event) -> None:
         """"""
@@ -244,7 +238,7 @@ class RecorderEngine(BaseEngine):
         contract: ContractData = event.data
         vt_symbol: str = contract.vt_symbol
 
-        if (vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings):
+        if vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings:
             self.subscribe(contract)
 
     def process_spread_event(self, event: Event) -> None:
@@ -261,7 +255,7 @@ class RecorderEngine(BaseEngine):
             bid_volume_1=spread_item.bid_volume,
             ask_volume_1=spread_item.ask_volume,
             localtime=spread_item.datetime,
-            gateway_name="SPREAD"
+            gateway_name="SPREAD",
         )
 
         # Filter not inited spread data
@@ -270,10 +264,7 @@ class RecorderEngine(BaseEngine):
 
     def write_log(self, msg: str) -> None:
         """"""
-        event: Event = Event(
-            EVENT_RECORDER_LOG,
-            msg
-        )
+        event: Event = Event(EVENT_RECORDER_LOG, msg)
         self.event_engine.put(event)
 
     def put_event(self) -> None:
@@ -284,15 +275,9 @@ class RecorderEngine(BaseEngine):
         bar_symbols: list[str] = list(self.bar_recordings.keys())
         bar_symbols.sort()
 
-        data: dict = {
-            "tick": tick_symbols,
-            "bar": bar_symbols
-        }
+        data: dict = {"tick": tick_symbols, "bar": bar_symbols}
 
-        event: Event = Event(
-            EVENT_RECORDER_UPDATE,
-            data
-        )
+        event: Event = Event(EVENT_RECORDER_UPDATE, data)
         self.event_engine.put(event)
 
     def record_tick(self, tick: TickData) -> None:
@@ -315,8 +300,5 @@ class RecorderEngine(BaseEngine):
 
     def subscribe(self, contract: ContractData) -> None:
         """"""
-        req: SubscribeRequest = SubscribeRequest(
-            symbol=contract.symbol,
-            exchange=contract.exchange
-        )
+        req: SubscribeRequest = SubscribeRequest(symbol=contract.symbol, exchange=contract.exchange)
         self.main_engine.subscribe(req, contract.gateway_name)
