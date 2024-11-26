@@ -83,7 +83,7 @@ class RecorderEngine(BaseEngine):
                 if task_type == "tick":
                     self.database.save_tick_data(data, stream=True)
                     print(
-                        f"datetime: {datetime.now().strftime('%Y%m%d %H:%M:%S')}, save tick size {len(data)}"
+                        f"datetime: {datetime.now().strftime('%Y%m%d %H:%M:%S')}, save {data[0].vt_symbol} tick size {len(data)}"
                     )
                 elif task_type == "bar":
                     self.database.save_bar_data(data, stream=True)
