@@ -92,6 +92,9 @@ class RecorderEngine(BaseEngine):
                 continue
 
             except Exception:
+                print(
+                    f"datetime: {datetime.now().strftime('%Y%m%d %H:%M:%S')}, run error {traceback.format_exc()}"
+                )
                 self.active = False
 
                 info = traceback.format_exc()
